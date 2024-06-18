@@ -1,27 +1,45 @@
-$OutputEncoding = [System.Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+
+[System.Globalization.CultureInfo]::DefaultThreadCurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo("pt-BR")
+[System.Globalization.CultureInfo]::DefaultThreadCurrentUICulture = [System.Globalization.CultureInfo]::GetCultureInfo("pt-BR")
+
 
 function Show-Menu {
     param (
         [string]$title = 'Menu Principal'
     )
-    
-    cls
-    Write-Host "================ $title ================"
-    Write-Host "1. Opção 1: Desativar telemetria"
-    Write-Host "2. Opção 2: Menu de contexto clássico"
-    Write-Host "3. Opção 3: Desativar Hibernar"
-	Write-Host "4. Opção 4: Habilitar alto desempenho"
-	Write-Host "5. Opção 5: Desativar UAC"
-	Write-Host "6. Opção 6: Limpar barra de tarefas"
-    Write-Host "7. Sair"
-    Write-Host "======================================"
+    Clear-Host
+    Write-Host "
+    ____                __                 _    __ ___   ____ 
+   / __ ) __  __ _____ / /_ ___   _____   | |  / /<  /  / __ \
+  / __  |/ / / // ___// __// _ \ / ___/   | | / / / /  / / / /
+ / /_/ // /_/ /(__  )/ /_ /  __// /       | |/ / / /_ / /_/ / 
+/_____/ \__,_//____/ \__/ \___//_/        |___/ /_/(_)\____/  
+                                                              
+                                                                                                                
+     By: Henry
+     
+     " -ForegroundColor Green -BackgroundColor Black
+
+    Write-Host "================ $title ================" -ForegroundColor Magenta -BackgroundColor Black
+    Write-Host "1. Desativar telemetria"
+    Write-Host "2. Menu de contexto clássico"
+    Write-Host "3. Desativar Hibernar"
+	Write-Host "4. Habilitar alto desempenho"
+	Write-Host "5. Desativar UAC"
+	Write-Host "6. Limpar barra de tarefas"
+	Write-Host "7. Desativa histórico de area de transferência"
+	Write-Host "8. Reiniciar"
+    Write-Host "9. Sair"
+    Write-Host "=================================================" -ForegroundColor Magenta -BackgroundColor Black
     Write-Host ""
 }
 
 function Get-Selection {
     param (
         [int]$min = 1,
-        [int]$max = 7
+        [int]$max = 9
     )
     
     $selection = Read-Host "Escolha uma opção ($min-$max)"
@@ -68,6 +86,10 @@ function Execute-Action {
         2 {
             Write-Host "Halitar menu de contexto clássico"
 			New-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "EnableClassicShellMenu" -Value 1 -PropertyType DWORD -Force
+
+            # Reiniciar o Explorador do Windows para aplicar as alterações
+            Stop-Process -Name explorer -Force
+            Start-Process explorer
         }
         3 {
             Write-Host "Desabilitar hibernar"
@@ -98,10 +120,39 @@ function Execute-Action {
             Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
 			Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0
 			Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
+            # Alterar o layout do Menu Iniciar para priorizar aplicativos fixados
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_Layout" -Value 1
+            #Desabilita arquivos recentes no menu iniciar
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackDocs" -Value 0
+            #Desabilita recomendações no menu iniciar
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_IrisRecommendations" -Value 0
+            #Desabilita notificações de conta
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_AccountNotifications" -Value 0
+            #Desativar sugestões e anúncios no Menu Iniciar
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SystemPaneSuggestionsEnabled" -Value 0
+            #Reduzir efeito de animação
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "MenuShowDelay" -Value 0
+            # Reiniciar o Explorador do Windows para aplicar as alterações
+            Stop-Process -Name explorer -Force
+            Start-Process explorer
+
+        
         }
 		
 		
-        7 {
+		  7 {
+            Write-Host "Desativa histórico de area de transferência"
+            # Desativa histórico de area de transferência
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableClipboardHistory" -Value 0 -Type DWord
+
+
+        }
+		
+		  8 {
+			Restart-Computer -Force
+		}
+		
+        9 {
             Write-Host "Saindo do menu..."
         }
         default {
@@ -116,10 +167,14 @@ do {
     $selection = Get-Selection
     Execute-Action -selection $selection
     
-    if ($selection -ne 7) {
+    if ($selection -ne 9) {
         Write-Host ""
         Read-Host "Pressione Enter para continuar..."
     }
-} while ($selection -ne 7)
+} while ($selection -ne 9)
 
 Write-Host "Programa finalizado."
+
+
+#Inicia remoção de app
+# winget uninstall --accept-source-agreements --disable-interactivity --id $app
