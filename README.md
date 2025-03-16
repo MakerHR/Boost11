@@ -42,7 +42,7 @@ Remove a política de execução atual. Exceto se ela estiver definida numa dire
 
 ## Exemplo
 
-Abra o CMD ou o PowerShell e insira o siguinte comando a baixo
+Abra o CMD ou o PowerShell e insira o seguinte comando a baixo
 
 ```Set-ExecutionPolicy Bypass```
 
